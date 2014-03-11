@@ -24,6 +24,10 @@ namespace Kinect_project
         public MainWindow()
         {
             InitializeComponent();
+            KinectSensor _sensor;
+            //
+            //
+
         }
     }
 }
