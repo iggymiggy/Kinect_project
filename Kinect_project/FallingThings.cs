@@ -29,14 +29,18 @@ namespace ShapeGame
 
         private readonly Dictionary<PolyType, PolyDef> polyDefs = new Dictionary<PolyType, PolyDef>
             {
-                { PolyType.Triangle, new PolyDef { Sides = 3, Skip = 1 } },
+                { PolyType.Triangle, new PolyDef { Sides = 3, Skip = 1 } }
+                /*,
                 { PolyType.Star, new PolyDef { Sides = 5, Skip = 2 } },
+                
                 { PolyType.Pentagon, new PolyDef { Sides = 5, Skip = 1 } },
                 { PolyType.Square, new PolyDef { Sides = 4, Skip = 1 } },
                 { PolyType.Hex, new PolyDef { Sides = 6, Skip = 1 } },
                 { PolyType.Star7, new PolyDef { Sides = 7, Skip = 3 } },
-                { PolyType.Circle, new PolyDef { Sides = 1, Skip = 1 } },
-                { PolyType.Bubble, new PolyDef { Sides = 0, Skip = 1 } }
+                { PolyType.Circle, new PolyDef { Sides = 1, Skip = 1 } }
+                //{ PolyType.Bubble, new PolyDef { Sides = 0, Skip = 1 } }
+                */
+                 
             };
 
         private readonly List<Thing> things = new List<Thing>();
@@ -181,6 +185,7 @@ namespace ShapeGame
             this.polyTypes = polies;
         }
 
+        //HITS
         public HitType LookForHits(Dictionary<Bone, BoneData> segments, int playerId)
         {
             DateTime cur = DateTime.Now;
@@ -337,9 +342,13 @@ namespace ShapeGame
             return allHits;
         }
 
+        //ADD AND MOVE THINGS
         public void AdvanceFrame()
         {
+            
+
             // Move all things by one step, accounting for gravity
+            
             for (int thingIndex = 0; thingIndex < this.things.Count; thingIndex++)
             {
                 Thing thing = this.things[thingIndex];
@@ -375,7 +384,7 @@ namespace ShapeGame
 
                 this.things[thingIndex] = thing;
             }
-
+            
             // Then remove any that should go away now
             for (int i = 0; i < this.things.Count; i++)
             {
@@ -386,14 +395,15 @@ namespace ShapeGame
                     i--;
                 }
             }
+            
 
             // Create any new things to drop based on dropRate
             if ((this.things.Count < this.maxThings) && (this.rnd.NextDouble() < this.dropRate / this.targetFrameRate) && (this.polyTypes != PolyType.None))
             {
                 PolyType[] alltypes = 
                 {
-                    PolyType.Triangle, PolyType.Square, PolyType.Star, PolyType.Pentagon,
-                    PolyType.Hex, PolyType.Star7, PolyType.Circle, PolyType.Bubble
+                    PolyType.Triangle //, PolyType.Square, PolyType.Star, PolyType.Pentagon,
+                    //PolyType.Hex, PolyType.Star7, PolyType.Circle
                 };
                 byte r;
                 byte g;
@@ -421,6 +431,7 @@ namespace ShapeGame
 
                 this.DropNewThing(tryType, this.shapeSize, System.Windows.Media.Color.FromRgb(r, g, b));
             }
+            
         }
 
         public void DrawFrame(UIElementCollection children)
@@ -555,8 +566,9 @@ namespace ShapeGame
                 YVelocity = ((0.5 * this.rnd.NextDouble()) - 0.25) / this.targetFrameRate,
                 XVelocity = 0,
                 Shape = newShape,
-                Center = new System.Windows.Point((this.rnd.NextDouble() * dropWidth) + ((this.sceneRect.Left + this.sceneRect.Right - dropWidth) / 2), this.sceneRect.Top - newSize),
-                SpinRate = ((this.rnd.NextDouble() * 12.0) - 6.0) * 2.0 * Math.PI / this.targetFrameRate / 4.0,
+                //KOHTA JOHON OBJEKTI ILMESTYY RUUDULLA
+                Center = new System.Windows.Point((this.rnd.NextDouble() * dropWidth) + ((this.sceneRect.Left + this.sceneRect.Right - dropWidth) / 2), this.rnd.NextDouble() * dropWidth),
+                SpinRate = 0,//((this.rnd.NextDouble() * 12.0) - 6.0) * 2.0 * Math.PI / this.targetFrameRate / 4.0,
                 Theta = 0,
                 TimeLastHit = DateTime.MinValue,
                 AvgTimeBetweenHits = 100,

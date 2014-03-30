@@ -8,17 +8,17 @@
     <Grid>
         <StackPanel Orientation="Vertical" Background="#FF46BC44">
             <Grid>
-                <Canvas Margin="0" Name="playfield" Height="688" Width="619" SizeChanged="PlayfieldSizeChanged">
+                <Canvas Name="playfield" Height="688" Width="619" SizeChanged="PlayfieldSizeChanged" VerticalAlignment="Bottom">
                     <Canvas.Background>
                         <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                            <GradientStop Color="#D9040833" Offset="0.238" />
-                            <GradientStop Color="#FF46BC44" Offset="1" />
+                            <GradientStop Color="Aqua" Offset="0.238" />
+                            <GradientStop Color="Aquamarine" Offset="1" />
                             <GradientStop Color="#E61747B2" Offset="0.811" />
                         </LinearGradientBrush>
                     </Canvas.Background>
                 </Canvas>
-                <kt:KinectColorViewer Margin="0,18,19,0" HorizontalAlignment="Right" Width="160" Height="120" VerticalAlignment="Top" KinectSensorManager="{Binding}"/>
-                <toolkit:KinectSensorChooserUI x:Name="SensorChooserUI" IsListening="True"  HorizontalAlignment="Center" VerticalAlignment="Top" />
+                <kt:KinectColorViewer Margin="0,558,449,0" HorizontalAlignment="Right" Width="160" Height="120" VerticalAlignment="Top" KinectSensorManager="{Binding}"/>
+                <toolkit:KinectSensorChooserUI x:Name="SensorChooserUI" IsListening="True"  HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="657,0,-78,648" />
             </Grid>
             
         </StackPanel>

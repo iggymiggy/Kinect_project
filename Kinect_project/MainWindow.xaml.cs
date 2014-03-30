@@ -49,7 +49,7 @@ namespace ShapeGame
         private const double MaxShapeSize = 90;
         private const double DefaultDropRate = 2.5;
         private const double DefaultDropSize = 32.0;
-        private const double DefaultDropGravity = 1.0;
+        private const double DefaultDropGravity = 0.0;
 
         private readonly Dictionary<int, Player> players = new Dictionary<int, Player>();
         private readonly SoundPlayer popSound = new SoundPlayer();
@@ -332,14 +332,7 @@ namespace ShapeGame
                     this.myFallingThings.SetGameMode(GameMode.Off);
                 }
 
-                if (this.playersAlive == 0 )
-                {
-                    BannerText.NewBanner(
-                        Properties.Resources.Vocabulary,
-                        this.screenRect,
-                        true,
-                        System.Windows.Media.Color.FromArgb(200, 255, 255, 255));
-                }
+               
 
                 this.playersAlive = alive;
             }
@@ -358,7 +351,7 @@ namespace ShapeGame
             this.screenRect.Width = this.playfield.ActualWidth;
             this.screenRect.Height = this.playfield.ActualHeight;
 
-            BannerText.UpdateBounds(this.screenRect);
+            
 
             this.playerBounds.X = 0;
             this.playerBounds.Width = this.playfield.ActualWidth;
@@ -467,7 +460,7 @@ namespace ShapeGame
                 player.Value.Draw(playfield.Children);
             }
 
-            BannerText.Draw(playfield.Children);
+            
             FlyingText.Draw(playfield.Children);
 
             this.CheckPlayers();
