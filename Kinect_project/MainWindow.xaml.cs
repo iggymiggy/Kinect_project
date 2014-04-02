@@ -8,6 +8,8 @@
 // processing, displaying players on screen, and sending updated player
 // positions to the game portion for hit testing.
 
+
+
 namespace ShapeGame
 {
     using System;
@@ -25,6 +27,11 @@ namespace ShapeGame
     using Microsoft.Kinect.Toolkit;
     using Microsoft.Samples.Kinect.WpfViewers;
     using ShapeGame.Utils;
+    using Microsoft.Xna.Framework.Content;
+    using Microsoft.Xna.Framework.Graphics;
+    using Microsoft.Xna.Framework.Input;
+    using Microsoft.Xna.Framework.Storage;
+    using Microsoft.Xna.Framework.GamerServices;
 
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -38,6 +45,7 @@ namespace ShapeGame
                 typeof(KinectSensorManager),
                 typeof(MainWindow),
                 new PropertyMetadata(null));
+
 
         #region Private State
         private const int TimerResolution = 2;  // ms
@@ -76,7 +84,7 @@ namespace ShapeGame
         private FallingThings myFallingThings;
         private int playersAlive;
 
-       
+    
         #endregion Private State
 
         #region ctor + Window Events
@@ -151,7 +159,7 @@ namespace ShapeGame
             myGameThread.SetApartmentState(ApartmentState.STA);
             myGameThread.Start();
 
-            FlyingText.NewFlyingText(this.screenRect.Width / 30, new Point(this.screenRect.Width / 2, this.screenRect.Height / 2), "Shapes!");
+            FlyingText.NewFlyingText(this.screenRect.Width / 30, new Point(this.screenRect.Width / 2, this.screenRect.Height / 2), "Start!");
         }
 
         private void WindowClosing(object sender, CancelEventArgs e)
@@ -454,18 +462,31 @@ namespace ShapeGame
 
             // Draw new Wpf scene by adding all objects to canvas
             playfield.Children.Clear();
+
+
+            
+            // tekee joka kerta kun bonus laskuri on tullut täyteen. Voisi laittaa toimimaan puheohjauksella esim. Fire huudolla. 
+            if (myFallingThings.bonus == myFallingThings.max_bonus)
+            {
+                this.myFallingThings.DestroyThings(); // tuhoaa thingejä tietyltä x koordinaattialueelta. Jonkun palikan kautta animaation voisi piirtää siihen selvennykseksi
+                this.myFallingThings.bonus = 0;
+                
+            }
+
             this.myFallingThings.DrawFrame(this.playfield.Children);
             foreach (var player in this.players)
             {
                 player.Value.Draw(playfield.Children);
             }
 
-            
             FlyingText.Draw(playfield.Children);
+
+            
 
             this.CheckPlayers();
         }
         #endregion GameTimer/Thread
 
+       
     }
 }

@@ -20,8 +20,9 @@ namespace ShapeGame.Utils
     public enum PolyType
     {
         None = 0x00,
-        Triangle = 0x01,
-        /*
+        Square = 0x01,
+        
+        /*Triangle = 0x01,
         Square = 0x02,
         Star = 0x04,
         Pentagon = 0x08,
@@ -31,6 +32,12 @@ namespace ShapeGame.Utils
         Bubble = 0x80,
         */
         All = 0x7f
+    }
+
+    public enum ThingType
+    {
+        None = 0,
+        Basic = 1
     }
 
     [Flags]

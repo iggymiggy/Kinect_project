@@ -29,17 +29,15 @@ namespace ShapeGame
 
         private readonly Dictionary<PolyType, PolyDef> polyDefs = new Dictionary<PolyType, PolyDef>
             {
-                { PolyType.Triangle, new PolyDef { Sides = 3, Skip = 1 } }
-                /*,
-                { PolyType.Star, new PolyDef { Sides = 5, Skip = 2 } },
-                
-                { PolyType.Pentagon, new PolyDef { Sides = 5, Skip = 1 } },
-                { PolyType.Square, new PolyDef { Sides = 4, Skip = 1 } },
-                { PolyType.Hex, new PolyDef { Sides = 6, Skip = 1 } },
-                { PolyType.Star7, new PolyDef { Sides = 7, Skip = 3 } },
-                { PolyType.Circle, new PolyDef { Sides = 1, Skip = 1 } }
+                //{ PolyType.Triangle, new PolyDef { Sides = 3, Skip = 1 } },
+                //{ PolyType.Star, new PolyDef { Sides = 5, Skip = 2 } },
+                //{ PolyType.Pentagon, new PolyDef { Sides = 5, Skip = 1 } },
+                { PolyType.Square, new PolyDef { Sides = 4, Skip = 1 } }//,
+                //{ PolyType.Hex, new PolyDef { Sides = 6, Skip = 1 } },
+                //{ PolyType.Star7, new PolyDef { Sides = 7, Skip = 3 } },
+                //{ PolyType.Circle, new PolyDef { Sides = 1, Skip = 1 } }
                 //{ PolyType.Bubble, new PolyDef { Sides = 0, Skip = 1 } }
-                */
+                
                  
             };
 
@@ -64,6 +62,11 @@ namespace ShapeGame
         private System.Windows.Media.Color baseColor = System.Windows.Media.Color.FromRgb(0, 0, 0);
         private PolyType polyTypes = PolyType.All;
         private DateTime gameStartTime;
+
+        public int bonus = 0;
+        public int max_bonus = 30;
+        public int missed_blocks = 0;
+        public int max_missed = 100;
 
         public FallingThings(int maxThings, double framerate, int intraFrames)
         {
@@ -354,16 +357,30 @@ namespace ShapeGame
                 Thing thing = this.things[thingIndex];
                 thing.Center.Offset(thing.XVelocity, thing.YVelocity);
                 thing.YVelocity += this.gravity * this.sceneRect.Height;
+                //thing.XVelocity += 0.5;
                 thing.YVelocity *= this.airFriction;
-                thing.XVelocity *= this.airFriction;
+                //thing.XVelocity *= this.airFriction;
                 thing.Theta += thing.SpinRate;
 
                 // bounce off walls
-                if ((thing.Center.X - thing.Size < 0) || (thing.Center.X + thing.Size > this.sceneRect.Width))
+                /*if ((thing.Center.X - thing.Size < 0) || (thing.Center.X + thing.Size > this.sceneRect.Width))
                 {
                     thing.XVelocity = -thing.XVelocity;
                     thing.Center.X += thing.XVelocity;
+                }*/
+
+                // TODO: Korjaa paremmaksi
+                // tämän voisi miettiä paremmin
+                // tämä lisää myös missedeihin ne joihin on osunut ja ne lentää ulos sivuilta
+                if ((thing.Center.X - thing.Size < 0) || (thing.Center.X + thing.Size > this.sceneRect.Width))
+                {
+                    this.things.Remove(this.things[thingIndex]);
+                    this.missed_blocks++;
+                    continue;
                 }
+
+
+
 
                 // Then get rid of one if any that fall off the bottom
                 if (thing.Center.Y - thing.Size > this.sceneRect.Bottom)
@@ -402,7 +419,7 @@ namespace ShapeGame
             {
                 PolyType[] alltypes = 
                 {
-                    PolyType.Triangle //, PolyType.Square, PolyType.Star, PolyType.Pentagon,
+                    PolyType.Square //PolyType.Triangle , PolyType.Square, PolyType.Star, PolyType.Pentagon,
                     //PolyType.Hex, PolyType.Star7, PolyType.Circle
                 };
                 byte r;
@@ -433,10 +450,27 @@ namespace ShapeGame
             }
             
         }
+        public void DestroyThings()
+        {
+
+            for (int i = 0; i < this.things.Count; i++)
+            {
+                this.things.Remove(this.things[i]);
+                /*if (this.things[i].Center.X > 100 && this.things[i].Center.X < 200)
+                {
+                    this.things.Remove(this.things[i]);                  
+                }*/
+            }
+        }
+
 
         public void DrawFrame(UIElementCollection children)
         {
             this.frameCount++;
+            if (this.frameCount % 60 == 0 && this.bonus < this.max_bonus && this.missed_blocks < this.max_missed)
+            {
+                this.bonus++;
+            }
 
             // Draw all shapes in the scene
             for (int i = 0; i < this.things.Count; i++)
@@ -500,7 +534,7 @@ namespace ShapeGame
                 int i = 0;
                 foreach (var score in this.scores)
                 {
-                    Label label = MakeSimpleLabel(
+                    Label label = MakeSimpleLabel("Score: " +
                         score.Value.ToString(CultureInfo.InvariantCulture),
                         new Rect(
                             (0.02 + (i * 0.6)) * this.sceneRect.Width,
@@ -512,7 +546,40 @@ namespace ShapeGame
                     children.Add(label);
                     i++;
                 }
+                
             }
+
+            
+            // Draw bonus
+            string bonus_text = "Bonus: " + this.bonus.ToString(CultureInfo.InvariantCulture) + "/" + this.max_bonus.ToString(CultureInfo.InvariantCulture);
+            Label bonus_label = MakeSimpleLabel(bonus_text, new Rect(this.sceneRect.Width * 0.6, 5, 0.4 * this.sceneRect.Width, 0.3 * this.sceneRect.Height), new SolidColorBrush(System.Windows.Media.Color.FromArgb(200, 255, 255, 255)));
+            bonus_label.FontSize = Math.Max(1, Math.Min(this.sceneRect.Width / 20, this.sceneRect.Height / 20));
+            children.Add(bonus_label);
+
+            if (this.bonus >= max_bonus)
+            {
+                // voisi keksiä paremman nimen
+                string weapon_ready_text = "Weapon ready! (shout 'Fire')";
+                Label weapon_label = MakeSimpleLabel(weapon_ready_text, new Rect(this.sceneRect.Width * 0.5, 0.8 * this.sceneRect.Height, 0.4 * this.sceneRect.Width, 0.3 * this.sceneRect.Height), new SolidColorBrush(System.Windows.Media.Color.FromArgb(200, 255, 0, 0)));
+                weapon_label.FontSize = Math.Max(1, Math.Min(this.sceneRect.Width / 20, this.sceneRect.Height / 20));
+                children.Add(weapon_label);
+            }
+            
+            // Draw missed blocks counter
+            string missed_text = "Missed: " + this.missed_blocks.ToString(CultureInfo.InvariantCulture) + "/" + this.max_missed.ToString(CultureInfo.InvariantCulture);
+            Label missed_label = MakeSimpleLabel(missed_text, new Rect(this.sceneRect.Width * 0.6, 50, 0.4 * this.sceneRect.Width, 0.3 * this.sceneRect.Height), new SolidColorBrush(System.Windows.Media.Color.FromArgb(200, 255, 255, 255)));
+            missed_label.FontSize = Math.Max(1, Math.Min(this.sceneRect.Width / 20, this.sceneRect.Height / 20));
+            children.Add(missed_label);
+
+            if (this.missed_blocks >= this.max_missed)
+            {
+                string game_over_text = "Game Over! Say 'reset' to start again";
+                Label game_over_label = MakeSimpleLabel(game_over_text, new Rect(this.sceneRect.Width * 0.2, 0.5 * this.sceneRect.Height, 0.8 * this.sceneRect.Width, 0.3 * this.sceneRect.Height), new SolidColorBrush(System.Windows.Media.Color.FromArgb(200, 0, 0, 255)));
+                game_over_label.FontSize = Math.Max(1, Math.Min(20, 20));
+                children.Add(game_over_label);
+            }
+
+
 
             // Show game timer
             if (this.gameMode != GameMode.Off)
@@ -564,12 +631,14 @@ namespace ShapeGame
             {
                 Size = newSize,
                 YVelocity = ((0.5 * this.rnd.NextDouble()) - 0.25) / this.targetFrameRate,
-                XVelocity = 0,
+                XVelocity = 0.5,
                 Shape = newShape,
                 //KOHTA JOHON OBJEKTI ILMESTYY RUUDULLA
-                Center = new System.Windows.Point((this.rnd.NextDouble() * dropWidth) + ((this.sceneRect.Left + this.sceneRect.Right - dropWidth) / 2), this.rnd.NextDouble() * dropWidth),
+                // Vaihoin neliöiksi että olisi helpompi ehkä käyttää sitä imagebrushia. ehkä?
+                //Center = new System.Windows.Point((this.rnd.NextDouble() * dropWidth) + ((this.sceneRect.Left + this.sceneRect.Right - dropWidth) / 2), this.rnd.NextDouble() * dropWidth),
+                Center = new System.Windows.Point(25.0 , this.rnd.NextDouble() * dropWidth),
                 SpinRate = 0,//((this.rnd.NextDouble() * 12.0) - 6.0) * 2.0 * Math.PI / this.targetFrameRate / 4.0,
-                Theta = 0,
+                Theta = 3.14/4, // laittaa neliöt suoraan
                 TimeLastHit = DateTime.MinValue,
                 AvgTimeBetweenHits = 100,
                 Color = newColor,
