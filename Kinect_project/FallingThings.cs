@@ -25,6 +25,7 @@ namespace ShapeGame
     public class FallingThings
     {
         private const double BaseGravity = 0.017;
+        private const double XVelocity = 0.5;
         private const double BaseAirFriction = 0.994;
 
         private readonly Dictionary<PolyType, PolyDef> polyDefs = new Dictionary<PolyType, PolyDef>
@@ -55,6 +56,7 @@ namespace ShapeGame
         private GameMode gameMode = GameMode.Off;
         private double gravity = BaseGravity;
         private double gravityFactor = 1.0;
+        private double xvelocity = XVelocity;
         private double airFriction = BaseAirFriction;
         private int frameCount;
         private bool doRandomColors = true;
@@ -127,6 +129,10 @@ namespace ShapeGame
         public void SetDropRate(double f)
         {
             this.dropRate = f;
+        }
+        public void SetXvelocity(double f)
+        {
+            this.xvelocity = f;
         }
 
         public void SetSize(double f)
@@ -356,8 +362,8 @@ namespace ShapeGame
             {
                 Thing thing = this.things[thingIndex];
                 thing.Center.Offset(thing.XVelocity, thing.YVelocity);
-                thing.YVelocity += this.gravity * this.sceneRect.Height;
-                //thing.XVelocity += 0.5;
+                //thing.YVelocity += this.gravity * this.sceneRect.Height;
+                thing.XVelocity = this.xvelocity;
                 thing.YVelocity *= this.airFriction;
                 //thing.XVelocity *= this.airFriction;
                 thing.Theta += thing.SpinRate;

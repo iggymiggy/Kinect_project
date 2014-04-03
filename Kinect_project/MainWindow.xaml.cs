@@ -51,6 +51,7 @@ namespace ShapeGame
         private const double DefaultDropRate = 2.5;
         private const double DefaultDropSize = 32.0;
         private const double DefaultDropGravity = 0.0;
+        private const double DefaultXvelocity = 0.5;
 
         private readonly Dictionary<int, Player> players = new Dictionary<int, Player>();
         private readonly SoundPlayer popSound = new SoundPlayer();
@@ -61,6 +62,7 @@ namespace ShapeGame
         private double dropRate = DefaultDropRate;
         private double dropSize = DefaultDropSize;
         private double dropGravity = DefaultDropGravity;
+        private double xvelocity = DefaultXvelocity;
         private DateTime lastFrameDrawn = DateTime.MinValue;
         private DateTime predNextFrame = DateTime.MinValue;
         private double actualFrameTime;
@@ -512,10 +514,12 @@ namespace ShapeGame
                 case SpeechRecognizer.Verbs.Pause:
                     this.myFallingThings.SetDropRate(0);
                     this.myFallingThings.SetGravity(0);
+                    this.myFallingThings.SetXvelocity(0);
                     break;
                 case SpeechRecognizer.Verbs.Resume:
                     this.myFallingThings.SetDropRate(this.dropRate);
                     this.myFallingThings.SetGravity(this.dropGravity);
+                    this.myFallingThings.SetXvelocity(this.xvelocity);
                     break;
                 case SpeechRecognizer.Verbs.Reset:
                     this.dropRate = DefaultDropRate;
