@@ -8,8 +8,6 @@
 // processing, displaying players on screen, and sending updated player
 // positions to the game portion for hit testing.
 
-
-
 namespace ShapeGame
 {
     using System;
@@ -27,11 +25,7 @@ namespace ShapeGame
     using Microsoft.Kinect.Toolkit;
     using Microsoft.Samples.Kinect.WpfViewers;
     using ShapeGame.Utils;
-    using Microsoft.Xna.Framework.Content;
-    using Microsoft.Xna.Framework.Graphics;
-    using Microsoft.Xna.Framework.Input;
-    using Microsoft.Xna.Framework.Storage;
-    using Microsoft.Xna.Framework.GamerServices;
+    using ShapeGame.Speech;
 
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -45,7 +39,6 @@ namespace ShapeGame
                 typeof(KinectSensorManager),
                 typeof(MainWindow),
                 new PropertyMetadata(null));
-
 
         #region Private State
         private const int TimerResolution = 2;  // ms
@@ -84,7 +77,7 @@ namespace ShapeGame
         private FallingThings myFallingThings;
         private int playersAlive;
 
-    
+        private SpeechRecognizer mySpeechRecognizer;
         #endregion Private State
 
         #region ctor + Window Events
@@ -188,7 +181,9 @@ namespace ShapeGame
                 this.UninitializeKinectServices(args.OldValue);
             }
 
-            
+            // Only enable this checkbox if we have a sensor
+            enableAec.IsEnabled = null != args.NewValue;
+
             if (null != args.NewValue)
             {
                 this.InitializeKinectServices(this.KinectSensorManager, args.NewValue);
@@ -214,7 +209,20 @@ namespace ShapeGame
             kinectSensorManager.SkeletonStreamEnabled = true;
             kinectSensorManager.KinectSensorEnabled = true;
 
-            
+           if (!kinectSensorManager.KinectSensorAppConflict)
+            {
+                // Start speech recognizer after KinectSensor started successfully.
+                this.mySpeechRecognizer = SpeechRecognizer.Create();
+
+                if (null != this.mySpeechRecognizer)
+                {
+                    this.mySpeechRecognizer.SaidSomething += this.RecognizerSaidSomething;
+                    this.mySpeechRecognizer.Start(sensor.AudioSource);
+                }
+
+                enableAec.Visibility = Visibility.Visible;
+                this.UpdateEchoCancellation(this.enableAec);
+            }
         }
 
         // Kinect enabled apps should uninitialize all Kinect services that were initialized in InitializeKinectServices() here.
@@ -222,7 +230,15 @@ namespace ShapeGame
         {
             sensor.SkeletonFrameReady -= this.SkeletonsReady;
 
-           
+            if (null != this.mySpeechRecognizer)
+            {
+                this.mySpeechRecognizer.Stop();
+                this.mySpeechRecognizer.SaidSomething -= this.RecognizerSaidSomething;
+                this.mySpeechRecognizer.Dispose();
+                this.mySpeechRecognizer = null;
+            }
+
+            enableAec.Visibility = Visibility.Collapsed;
         }
 
         #endregion Kinect discovery + setup
@@ -487,6 +503,113 @@ namespace ShapeGame
         }
         #endregion GameTimer/Thread
 
+        #region Kinect Speech processing
+        private void RecognizerSaidSomething(object sender, SpeechRecognizer.SaidSomethingEventArgs e)
+        {
+            FlyingText.NewFlyingText(this.screenRect.Width / 30, new Point(this.screenRect.Width / 2, this.screenRect.Height / 2), e.Matched);
+            switch (e.Verb)
+            {
+                case SpeechRecognizer.Verbs.Pause:
+                    this.myFallingThings.SetDropRate(0);
+                    this.myFallingThings.SetGravity(0);
+                    break;
+                case SpeechRecognizer.Verbs.Resume:
+                    this.myFallingThings.SetDropRate(this.dropRate);
+                    this.myFallingThings.SetGravity(this.dropGravity);
+                    break;
+                case SpeechRecognizer.Verbs.Reset:
+                    this.dropRate = DefaultDropRate;
+                    this.dropSize = DefaultDropSize;
+                    this.dropGravity = DefaultDropGravity;
+                    this.myFallingThings.SetPolies(PolyType.All);
+                    this.myFallingThings.SetDropRate(this.dropRate);
+                    this.myFallingThings.SetGravity(this.dropGravity);
+                    this.myFallingThings.SetSize(this.dropSize);
+                    this.myFallingThings.SetShapesColor(System.Windows.Media.Color.FromRgb(0, 0, 0), true);
+                    this.myFallingThings.Reset();
+                    break;
+                case SpeechRecognizer.Verbs.DoShapes:
+                    this.myFallingThings.SetPolies(e.Shape);
+                    break;
+                case SpeechRecognizer.Verbs.RandomColors:
+                    this.myFallingThings.SetShapesColor(System.Windows.Media.Color.FromRgb(0, 0, 0), true);
+                    break;
+                case SpeechRecognizer.Verbs.Colorize:
+                    this.myFallingThings.SetShapesColor(e.RgbColor, false);
+                    break;
+                case SpeechRecognizer.Verbs.ShapesAndColors:
+                    this.myFallingThings.SetPolies(e.Shape);
+                    this.myFallingThings.SetShapesColor(e.RgbColor, false);
+                    break;
+                case SpeechRecognizer.Verbs.More:
+                    this.dropRate *= 1.5;
+                    this.myFallingThings.SetDropRate(this.dropRate);
+                    break;
+                case SpeechRecognizer.Verbs.Fewer:
+                    this.dropRate /= 1.5;
+                    this.myFallingThings.SetDropRate(this.dropRate);
+                    break;
+                case SpeechRecognizer.Verbs.Bigger:
+                    this.dropSize *= 1.5;
+                    if (this.dropSize > MaxShapeSize)
+                    {
+                        this.dropSize = MaxShapeSize;
+                    }
+
+                    this.myFallingThings.SetSize(this.dropSize);
+                    break;
+                case SpeechRecognizer.Verbs.Biggest:
+                    this.dropSize = MaxShapeSize;
+                    this.myFallingThings.SetSize(this.dropSize);
+                    break;
+                case SpeechRecognizer.Verbs.Smaller:
+                    this.dropSize /= 1.5;
+                    if (this.dropSize < MinShapeSize)
+                    {
+                        this.dropSize = MinShapeSize;
+                    }
+
+                    this.myFallingThings.SetSize(this.dropSize);
+                    break;
+                case SpeechRecognizer.Verbs.Smallest:
+                    this.dropSize = MinShapeSize;
+                    this.myFallingThings.SetSize(this.dropSize);
+                    break;
+                case SpeechRecognizer.Verbs.Faster:
+                    this.dropGravity *= 1.25;
+                    if (this.dropGravity > 4.0)
+                    {
+                        this.dropGravity = 4.0;
+                    }
+
+                    this.myFallingThings.SetGravity(this.dropGravity);
+                    break;
+                case SpeechRecognizer.Verbs.Slower:
+                    this.dropGravity /= 1.25;
+                    if (this.dropGravity < 0.25)
+                    {
+                        this.dropGravity = 0.25;
+                    }
+
+                    this.myFallingThings.SetGravity(this.dropGravity);
+                    break;
+            }
+        }
+
+        private void EnableAecChecked(object sender, RoutedEventArgs e)
+        {
+            var enableAecCheckBox = (CheckBox)sender;
+            this.UpdateEchoCancellation(enableAecCheckBox);
+        }
+
+        private void UpdateEchoCancellation(CheckBox aecCheckBox)
+        {
+            this.mySpeechRecognizer.EchoCancellationMode = aecCheckBox.IsChecked != null && aecCheckBox.IsChecked.Value
+                ? EchoCancellationMode.CancellationAndSuppression
+                : EchoCancellationMode.None;
+        }
+
+        #endregion Kinect Speech processing
        
     }
 }

@@ -14,9 +14,11 @@
                     </Canvas.Background>
                 </Canvas>
                 <kt:KinectColorViewer Margin="0,558,449,0" HorizontalAlignment="Right" Width="160" Height="120" VerticalAlignment="Top" KinectSensorManager="{Binding}"/>
-                <toolkit:KinectSensorChooserUI x:Name="SensorChooserUI" IsListening="True"  HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="657,0,-78,648" />
+                <toolkit:KinectSensorChooserUI x:Name="SensorChooserUI" IsListening="True"  HorizontalAlignment="Center" Margin="115,10,449,638" RenderTransformOrigin="-10.032,1.066" Width="55" />
             </Grid>
-            
+            <CheckBox x:Name="enableAec" Foreground="White" FontSize="20" Margin="19,0,0,18" HorizontalAlignment="Left" VerticalAlignment="Bottom" Visibility="Collapsed" Checked="EnableAecChecked" Unchecked="EnableAecChecked" IsEnabled="False">
+                Enable Echo Cancellation on Default Speakers
+            </CheckBox>
         </StackPanel>
     </Grid>
 </Window>
