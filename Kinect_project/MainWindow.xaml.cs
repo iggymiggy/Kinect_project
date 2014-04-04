@@ -148,8 +148,11 @@ namespace ShapeGame
             this.myFallingThings.SetSize(this.dropSize);
             this.myFallingThings.SetPolies(PolyType.All);
             this.myFallingThings.SetGameMode(GameMode.Off);
-            this.myFallingThings.list_loader();
-
+            this.myFallingThings.list_loader(0);
+            this.myFallingThings.list_loader(1);
+            this.myFallingThings.list_loader(2);
+            this.myFallingThings.list_loader(3);
+            this.myFallingThings.list_loader(4);
             this.popSound.Stream = Properties.Resources.Pop_5;
             this.hitSound.Stream = Properties.Resources.Hit_2;
             this.squeezeSound.Stream = Properties.Resources.Squeeze;
@@ -543,6 +546,8 @@ namespace ShapeGame
                     this.myFallingThings.missed_blocks = 0;
                     this.myFallingThings.SetShapesColor(System.Windows.Media.Color.FromRgb(0, 0, 0), true);
                     this.myFallingThings.Reset();
+
+                    this.myFallingThings.missed_blocks = 0;
                     break;                
             }
         }
@@ -555,11 +560,11 @@ namespace ShapeGame
 
         private void UpdateEchoCancellation(CheckBox aecCheckBox)
         {
-                /*
+                
             this.mySpeechRecognizer.EchoCancellationMode = aecCheckBox.IsChecked != null && aecCheckBox.IsChecked.Value
                 ? EchoCancellationMode.CancellationAndSuppression
                 : EchoCancellationMode.None;
-                 * */
+                 
         }
 
         #endregion Kinect Speech processing

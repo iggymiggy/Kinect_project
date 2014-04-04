@@ -31,19 +31,8 @@ namespace ShapeGame
 
         private readonly Dictionary<PolyType, PolyDef> polyDefs = new Dictionary<PolyType, PolyDef>
             {
-                //{ PolyType.Triangle, new PolyDef { Sides = 3, Skip = 1 } },
-                //{ PolyType.Star, new PolyDef { Sides = 5, Skip = 2 } },
-                //{ PolyType.Pentagon, new PolyDef { Sides = 5, Skip = 1 } },
                 { PolyType.Square, new PolyDef { Sides = 4, Skip = 1 } }//,
-                //{ PolyType.Hex, new PolyDef { Sides = 6, Skip = 1 } },
-                //{ PolyType.Star7, new PolyDef { Sides = 7, Skip = 3 } },
-                //{ PolyType.Circle, new PolyDef { Sides = 1, Skip = 1 } }
-                //{ PolyType.Bubble, new PolyDef { Sides = 0, Skip = 1 } }
-                
-                 
             };
-
-
 
         private readonly List<Thing> things = new List<Thing>();
         private readonly Random rnd = new Random();
@@ -67,26 +56,71 @@ namespace ShapeGame
         private System.Windows.Media.Color baseColor = System.Windows.Media.Color.FromRgb(0, 0, 0);
         private PolyType polyTypes = PolyType.All;
         private DateTime gameStartTime;
-       
-        private BitmapImage orc = new BitmapImage(new Uri("Resources/dorver-stand.gif", UriKind.Relative));
+        private BitmapImage orc = new BitmapImage(new Uri("Resources/sumo.png", UriKind.Relative));
         private BitmapImage earth = new BitmapImage(new Uri("Resources/earth.gif", UriKind.Relative));
         private BitmapImage tim = new BitmapImage(new Uri("Resources/Tim.png", UriKind.Relative));
         private BitmapImage tim0 = new BitmapImage(new Uri("Resources/0.png", UriKind.Relative));
-        //private CroppedBitmap cb = new CroppedBitmap(new BitmapImage(new Uri("Resources/Tim.png", UriKind.Relative)), new Int32Rect(0, 350, 150, 140));
-
-
         private List<BitmapImage> timlist = new List<BitmapImage>();
-
-        
-        public void list_loader()
+        private List<BitmapImage> ninjalist = new List<BitmapImage>();
+        private List<BitmapImage> karatelist = new List<BitmapImage>();
+        private List<BitmapImage> krokolist = new List<BitmapImage>();
+        private List<BitmapImage> blacklist = new List<BitmapImage>();
+        //create arrays for sprites
+        public void list_loader(int type)
         {
-            
-            for (int i = 0; i <= 26; i++)
+            if (type == 0)
             {
-                string name = i.ToString(CultureInfo.InvariantCulture);
-                name = "Resources/" + name + ".png";
-                this.timlist.Add(new BitmapImage(new Uri(name, UriKind.Relative)));
+                for (int i = 0; i <= 26; i++)
+                {
+                    string name = i.ToString(CultureInfo.InvariantCulture);
+                    name = "Resources/" + name + ".png";
+                    this.timlist.Add(new BitmapImage(new Uri(name, UriKind.Relative)));
 
+                }
+            }
+            if (type == 1)
+            {
+
+                for (int i = 1; i <= 14; i++)
+                {
+                    string name = i.ToString(CultureInfo.InvariantCulture);
+                    name = "Resources/ninja (" + name + ").png";
+                    this.ninjalist.Add(new BitmapImage(new Uri(name, UriKind.Relative)));
+
+                }
+            }
+            if (type == 2)
+            {
+
+                for (int i = 1; i <= 82; i++)
+                {
+                    string name = i.ToString(CultureInfo.InvariantCulture);
+                    name = "Resources/karate (" + name + ").png";
+                    this.karatelist.Add(new BitmapImage(new Uri(name, UriKind.Relative)));
+
+                }
+            }
+            if (type == 3)
+            {
+
+                for (int i = 1; i <= 17; i++)
+                {
+                    string name = i.ToString(CultureInfo.InvariantCulture);
+                    name = "Resources/kroko (" + name + ").png";
+                    this.krokolist.Add(new BitmapImage(new Uri(name, UriKind.Relative)));
+
+                }
+            }
+            if (type == 4)
+            {
+
+                for (int i = 1; i <= 22; i++)
+                {
+                    string name = i.ToString(CultureInfo.InvariantCulture);
+                    name = "Resources/black (" + name + ").png";
+                    this.blacklist.Add(new BitmapImage(new Uri(name, UriKind.Relative)));
+
+                }
             }
  
         }
@@ -116,11 +150,15 @@ namespace ShapeGame
             Dissolving = 2,
             Remove = 3
         }
-
+        //sprite type
         public enum enemy_type
         {
             Orc = 0,
-            basic = 1
+            basic = 1,
+            ninja = 2,
+            karate = 3,
+            kroko = 4,
+            black = 5
         }
 
         public static Label MakeSimpleLabel(string text, Rect bounds, System.Windows.Media.Brush brush)
@@ -195,11 +233,13 @@ namespace ShapeGame
                     thing.State = ThingState.Dissolving;
                     thing.Dissolve = 0;
                     this.things[i] = thing;
+                    this.missed_blocks = 0;
                 }
             }
 
             this.gameStartTime = DateTime.Now;
             this.scores.Clear();
+            this.missed_blocks= 0;
         }
 
         public void SetGameMode(GameMode mode)
@@ -396,39 +436,29 @@ namespace ShapeGame
         //ADD AND MOVE THINGS
         public void AdvanceFrame()
         {
-            
 
+            if (stopped == 1) return;
             // Move all things by one step, accounting for gravity
             
             for (int thingIndex = 0; thingIndex < this.things.Count; thingIndex++)
             {
                 Thing thing = this.things[thingIndex];
                 thing.Center.Offset(thing.XVelocity, thing.YVelocity);
-                //thing.YVelocity += this.gravity * this.sceneRect.Height;
                 thing.XVelocity = this.xvelocity;
                 thing.YVelocity *= this.airFriction;
-                //thing.XVelocity *= this.airFriction;
                 thing.Theta += thing.SpinRate;
 
-                // bounce off walls
-                /*if ((thing.Center.X - thing.Size < 0) || (thing.Center.X + thing.Size > this.sceneRect.Width))
-                {
-                    thing.XVelocity = -thing.XVelocity;
-                    thing.Center.X += thing.XVelocity;
-                }*/
-
-                // TODO: Korjaa paremmaksi
-                // tämän voisi miettiä paremmin
-                // tämä lisää myös missedeihin ne joihin on osunut ja ne lentää ulos sivuilta
                 if ((thing.Center.X + thing.Size > this.sceneRect.Width))
                 {
                     this.things.Remove(this.things[thingIndex]);
-                    this.missed_blocks++;
+                    TimeSpan span = DateTime.Now.Subtract(this.gameStartTime);
+                    if (span.TotalSeconds > 2)
+                    {
+                        this.missed_blocks++;
+                    }
+                   
                     continue;
                 }
-
-
-
 
                 // Then get rid of one if any that fall off the bottom
                 if (thing.Center.Y - thing.Size > this.sceneRect.Bottom)
@@ -467,8 +497,7 @@ namespace ShapeGame
             {
                 PolyType[] alltypes = 
                 {
-                    PolyType.Square //PolyType.Triangle , PolyType.Square, PolyType.Star, PolyType.Pentagon,
-                    //PolyType.Hex, PolyType.Star7, PolyType.Circle
+                    PolyType.Square 
                 };
                 byte r;
                 byte g;
@@ -573,9 +602,35 @@ namespace ShapeGame
                             (thing.State == ThingState.Dissolving) ? null : thing.Brush2, 1, 1,
                             thing.type,
                             thing.current_index));
-                    if (this.stopped == 0)
+                    if (this.stopped == 0 )
                     {
-                        thing.current_index++;
+                        if (thing.type == enemy_type.ninja)
+                        {
+                            if(this.frameCount % 3 == 0) thing.current_index++;
+                        }
+                            
+                        else if (thing.type == enemy_type.karate )
+                        {
+                            if(this.frameCount % 12 == 0) thing.current_index++;
+                            
+                        }
+                        else if (thing.type == enemy_type.kroko)
+                        {
+                            if (this.frameCount % 15 == 0) thing.current_index++;
+
+                        }
+                        
+                        else if (thing.type == enemy_type.black)
+                        {
+                            if (this.frameCount % 10 == 0) thing.current_index++;
+
+                        }
+                        else
+                        {
+                            thing.current_index++;
+                        }
+                        
+                        
                     }
                     
                     this.things[i] = thing;
@@ -630,9 +685,10 @@ namespace ShapeGame
             if (this.missed_blocks >= this.max_missed)
             {
                 string game_over_text = "Game Over! Say 'reset' to start again";
-                Label game_over_label = MakeSimpleLabel(game_over_text, new Rect(this.sceneRect.Width * 0.2, 0.5 * this.sceneRect.Height, 0.8 * this.sceneRect.Width, 0.3 * this.sceneRect.Height), new SolidColorBrush(System.Windows.Media.Color.FromArgb(200, 0, 0, 255)));
-                game_over_label.FontSize = Math.Max(1, Math.Min(20, 20));
+                Label game_over_label = MakeSimpleLabel(game_over_text, new Rect(this.sceneRect.Width * 0.02, 0.5 * this.sceneRect.Height, 0.98 * this.sceneRect.Width, 0.3 * this.sceneRect.Height), new SolidColorBrush(System.Windows.Media.Color.FromArgb(200, 0, 0, 255)));
+                game_over_label.FontSize = Math.Max(1, Math.Min(65, 65));
                 children.Add(game_over_label);
+                this.stopped = 1;
             }
 
 
@@ -695,9 +751,7 @@ namespace ShapeGame
                 YVelocity = ((0.5 * this.rnd.NextDouble()) - 0.25) / this.targetFrameRate,
                 XVelocity = 0.5,
                 Shape = newShape,
-                //KOHTA JOHON OBJEKTI ILMESTYY RUUDULLA
-                // Vaihoin neliöiksi että olisi helpompi ehkä käyttää sitä imagebrushia. ehkä?
-                //Center = new System.Windows.Point((this.rnd.NextDouble() * dropWidth) + ((this.sceneRect.Left + this.sceneRect.Right - dropWidth) / 2), this.rnd.NextDouble() * dropWidth),
+           
                 Center = new System.Windows.Point(25.0 , this.rnd.NextDouble() * dropWidth),
                 SpinRate = 0,//((this.rnd.NextDouble() * 12.0) - 6.0) * 2.0 * Math.PI / this.targetFrameRate / 4.0,
                 Theta = 3.14/4, // laittaa neliöt suoraan
@@ -780,6 +834,26 @@ namespace ShapeGame
                 //int s = r.Next(0, 26);
                 
                 polyline.Fill = new ImageBrush(timlist[current_image%27]);
+            }
+            else if (type == enemy_type.ninja)
+            {
+                
+                polyline.Fill = new ImageBrush(ninjalist[current_image % 13]);
+            }
+            else if (type == enemy_type.karate)
+            {
+
+                polyline.Fill = new ImageBrush(karatelist[current_image % 81]);
+            }
+            else if (type == enemy_type.kroko)
+            {
+
+                polyline.Fill = new ImageBrush(krokolist[current_image % 16]);
+            }
+            else if (type == enemy_type.black)
+            {
+
+                polyline.Fill = new ImageBrush(blacklist[current_image % 21]);
             }
             polyline.FillRule = FillRule.Nonzero;
             polyline.StrokeThickness = 0;//strokeThickness; // =0;
