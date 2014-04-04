@@ -562,12 +562,12 @@ namespace ShapeGame
             bonus_label.FontSize = Math.Max(1, Math.Min(this.sceneRect.Width / 20, this.sceneRect.Height / 20));
             children.Add(bonus_label);
 
-            if (this.bonus >= max_bonus)
+            if (this.bonus >= this.max_bonus)
             {
                 // voisi keksiä paremman nimen
                 string weapon_ready_text = "Weapon ready! (shout 'Fire')";
-                Label weapon_label = MakeSimpleLabel(weapon_ready_text, new Rect(this.sceneRect.Width * 0.5, 0.8 * this.sceneRect.Height, 0.4 * this.sceneRect.Width, 0.3 * this.sceneRect.Height), new SolidColorBrush(System.Windows.Media.Color.FromArgb(200, 255, 0, 0)));
-                weapon_label.FontSize = Math.Max(1, Math.Min(this.sceneRect.Width / 20, this.sceneRect.Height / 20));
+                Label weapon_label = MakeSimpleLabel(weapon_ready_text, new Rect(this.sceneRect.Width * 0.6, 0.15 * this.sceneRect.Height, 0.4 * this.sceneRect.Width, 0.3 * this.sceneRect.Height), new SolidColorBrush(System.Windows.Media.Color.FromArgb(200, 255, 0, 0)));
+                weapon_label.FontSize = Math.Max(1, Math.Min(20,20));
                 children.Add(weapon_label);
             }
             

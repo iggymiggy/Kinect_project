@@ -484,12 +484,12 @@ namespace ShapeGame
 
             
             // tekee joka kerta kun bonus laskuri on tullut täyteen. Voisi laittaa toimimaan puheohjauksella esim. Fire huudolla. 
-            if (myFallingThings.bonus == myFallingThings.max_bonus)
+            /*if (myFallingThings.bonus == myFallingThings.max_bonus)
             {
                 this.myFallingThings.DestroyThings(); // tuhoaa thingejä tietyltä x koordinaattialueelta. Jonkun palikan kautta animaation voisi piirtää siihen selvennykseksi
                 this.myFallingThings.bonus = 0;
                 
-            }
+            }*/
 
             this.myFallingThings.DrawFrame(this.playfield.Children);
             foreach (var player in this.players)
@@ -511,6 +511,14 @@ namespace ShapeGame
             FlyingText.NewFlyingText(this.screenRect.Width / 30, new Point(this.screenRect.Width / 2, this.screenRect.Height / 2), e.Matched);
             switch (e.Verb)
             {
+                case SpeechRecognizer.Verbs.Fire:
+                    if (this.myFallingThings.bonus == this.myFallingThings.max_bonus)
+                    {
+                        this.myFallingThings.DestroyThings();
+                        this.myFallingThings.bonus = 0;
+                    }
+                    
+                    break;
                 case SpeechRecognizer.Verbs.Pause:
                     this.myFallingThings.SetDropRate(0);
                     this.myFallingThings.SetGravity(0);
@@ -529,6 +537,10 @@ namespace ShapeGame
                     this.myFallingThings.SetDropRate(this.dropRate);
                     this.myFallingThings.SetGravity(this.dropGravity);
                     this.myFallingThings.SetSize(this.dropSize);
+                    this.myFallingThings.SetXvelocity(0.5);
+                    this.myFallingThings.bonus = 0;
+                    this.myFallingThings.missed_blocks = 0;
+                    // score pitäisi myös resettaa
                     this.myFallingThings.SetShapesColor(System.Windows.Media.Color.FromRgb(0, 0, 0), true);
                     this.myFallingThings.Reset();
                     break;

@@ -41,6 +41,7 @@ namespace ShapeGame.Speech
                 { "More", new WhatSaid { Verb = Verbs.More } },
                 { "Less", new WhatSaid { Verb = Verbs.Fewer } },
                 { "Fewer", new WhatSaid { Verb = Verbs.Fewer } },
+                { "Fire", new WhatSaid {Verb = Verbs.Fire} },
             };
 
         private readonly Dictionary<string, WhatSaid> shapePhrases = new Dictionary<string, WhatSaid>
@@ -170,6 +171,7 @@ namespace ShapeGame.Speech
             ShapesAndColors,
             Reset,
             Pause,
+            Fire,
             Resume
         }
 
