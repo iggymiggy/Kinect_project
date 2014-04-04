@@ -19,6 +19,7 @@ namespace ShapeGame
     using System.Windows.Shapes;
     using Microsoft.Kinect;
     using ShapeGame.Utils;
+    using System.Windows.Media.Imaging;
 
     // FallingThings is the main class to draw and maintain positions of falling shapes.  It also does hit testing
     // and appropriate bouncing.
@@ -42,6 +43,8 @@ namespace ShapeGame
                  
             };
 
+
+
         private readonly List<Thing> things = new List<Thing>();
         private readonly Random rnd = new Random();
         private readonly int maxThings;
@@ -64,11 +67,35 @@ namespace ShapeGame
         private System.Windows.Media.Color baseColor = System.Windows.Media.Color.FromRgb(0, 0, 0);
         private PolyType polyTypes = PolyType.All;
         private DateTime gameStartTime;
+       
+        private BitmapImage orc = new BitmapImage(new Uri("Resources/dorver-stand.gif", UriKind.Relative));
+        private BitmapImage earth = new BitmapImage(new Uri("Resources/earth.gif", UriKind.Relative));
+        private BitmapImage tim = new BitmapImage(new Uri("Resources/Tim.png", UriKind.Relative));
+        private BitmapImage tim0 = new BitmapImage(new Uri("Resources/0.png", UriKind.Relative));
+        //private CroppedBitmap cb = new CroppedBitmap(new BitmapImage(new Uri("Resources/Tim.png", UriKind.Relative)), new Int32Rect(0, 350, 150, 140));
 
+
+        private List<BitmapImage> timlist = new List<BitmapImage>();
+
+        
+        public void list_loader()
+        {
+            
+            for (int i = 0; i <= 26; i++)
+            {
+                string name = i.ToString(CultureInfo.InvariantCulture);
+                name = "Resources/" + name + ".png";
+                this.timlist.Add(new BitmapImage(new Uri(name, UriKind.Relative)));
+
+            }
+ 
+        }
+    
         public int bonus = 0;
         public int max_bonus = 30;
         public int missed_blocks = 0;
         public int max_missed = 100;
+        public int stopped = 0;
 
         public FallingThings(int maxThings, double framerate, int intraFrames)
         {
@@ -90,6 +117,12 @@ namespace ShapeGame
             Remove = 3
         }
 
+        public enum enemy_type
+        {
+            Orc = 0,
+            basic = 1
+        }
+
         public static Label MakeSimpleLabel(string text, Rect bounds, System.Windows.Media.Brush brush)
         {
             Label label = new Label { Content = text };
@@ -108,6 +141,11 @@ namespace ShapeGame
             label.HorizontalAlignment = HorizontalAlignment.Center;
             label.VerticalAlignment = VerticalAlignment.Center;
             return label;
+        }
+
+        public void ResetScores()
+        {
+            
         }
 
         public void SetFramerate(double actualFramerate)
@@ -197,9 +235,13 @@ namespace ShapeGame
         //HITS
         public HitType LookForHits(Dictionary<Bone, BoneData> segments, int playerId)
         {
+            
             DateTime cur = DateTime.Now;
             HitType allHits = HitType.None;
-
+            if (this.stopped == 1)
+            {
+                return allHits;
+            }
             // Zero out score if necessary
             if (!this.scores.ContainsKey(playerId))
             {
@@ -378,7 +420,7 @@ namespace ShapeGame
                 // TODO: Korjaa paremmaksi
                 // tämän voisi miettiä paremmin
                 // tämä lisää myös missedeihin ne joihin on osunut ja ne lentää ulos sivuilta
-                if ((thing.Center.X - thing.Size < 0) || (thing.Center.X + thing.Size > this.sceneRect.Width))
+                if ((thing.Center.X + thing.Size > this.sceneRect.Width))
                 {
                     this.things.Remove(this.things[thingIndex]);
                     this.missed_blocks++;
@@ -461,11 +503,10 @@ namespace ShapeGame
 
             for (int i = 0; i < this.things.Count; i++)
             {
-                this.things.Remove(this.things[i]);
-                /*if (this.things[i].Center.X > 100 && this.things[i].Center.X < 200)
-                {
-                    this.things.Remove(this.things[i]);                  
-                }*/
+                Thing thing = this.things[i];
+                thing.State = ThingState.Dissolving;
+                this.things[i] = thing;
+                
             }
         }
 
@@ -473,11 +514,7 @@ namespace ShapeGame
         public void DrawFrame(UIElementCollection children)
         {
             this.frameCount++;
-            if (this.frameCount % 60 == 0 && this.bonus < this.max_bonus && this.missed_blocks < this.max_missed)
-            {
-                this.bonus++;
-            }
-
+           
             // Draw all shapes in the scene
             for (int i = 0; i < this.things.Count; i++)
             {
@@ -510,7 +547,12 @@ namespace ShapeGame
                             thing.Brush,
                             thing.BrushPulse,
                             thing.Size * 0.1,
-                            alpha));
+                            alpha,
+                            thing.type,
+                            thing.current_index
+                            ));
+                    
+                    
                     this.things[i] = thing;
                 }
                 else
@@ -528,9 +570,15 @@ namespace ShapeGame
                             thing.Theta,
                             thing.Center,
                             thing.Brush,
-                            (thing.State == ThingState.Dissolving) ? null : thing.Brush2,
-                            1,
-                            1));
+                            (thing.State == ThingState.Dissolving) ? null : thing.Brush2, 1, 1,
+                            thing.type,
+                            thing.current_index));
+                    if (this.stopped == 0)
+                    {
+                        thing.current_index++;
+                    }
+                    
+                    this.things[i] = thing;
                 }
             }
 
@@ -555,10 +603,12 @@ namespace ShapeGame
                 
             }
 
+
+
             
             // Draw bonus
             string bonus_text = "Bonus: " + this.bonus.ToString(CultureInfo.InvariantCulture) + "/" + this.max_bonus.ToString(CultureInfo.InvariantCulture);
-            Label bonus_label = MakeSimpleLabel(bonus_text, new Rect(this.sceneRect.Width * 0.6, 5, 0.4 * this.sceneRect.Width, 0.3 * this.sceneRect.Height), new SolidColorBrush(System.Windows.Media.Color.FromArgb(200, 255, 255, 255)));
+            Label bonus_label = MakeSimpleLabel(bonus_text, new Rect(this.sceneRect.Width * 0.4, 5, 0.4 * this.sceneRect.Width, 0.3 * this.sceneRect.Height), new SolidColorBrush(System.Windows.Media.Color.FromArgb(200, 255, 255, 255)));
             bonus_label.FontSize = Math.Max(1, Math.Min(this.sceneRect.Width / 20, this.sceneRect.Height / 20));
             children.Add(bonus_label);
 
@@ -566,14 +616,14 @@ namespace ShapeGame
             {
                 // voisi keksiä paremman nimen
                 string weapon_ready_text = "Weapon ready! (shout 'Fire')";
-                Label weapon_label = MakeSimpleLabel(weapon_ready_text, new Rect(this.sceneRect.Width * 0.6, 0.15 * this.sceneRect.Height, 0.4 * this.sceneRect.Width, 0.3 * this.sceneRect.Height), new SolidColorBrush(System.Windows.Media.Color.FromArgb(200, 255, 0, 0)));
+                Label weapon_label = MakeSimpleLabel(weapon_ready_text, new Rect(this.sceneRect.Width * 0.4, 0.15 * this.sceneRect.Height, 0.4 * this.sceneRect.Width, 0.3 * this.sceneRect.Height), new SolidColorBrush(System.Windows.Media.Color.FromArgb(200, 255, 0, 0)));
                 weapon_label.FontSize = Math.Max(1, Math.Min(20,20));
                 children.Add(weapon_label);
             }
             
             // Draw missed blocks counter
             string missed_text = "Missed: " + this.missed_blocks.ToString(CultureInfo.InvariantCulture) + "/" + this.max_missed.ToString(CultureInfo.InvariantCulture);
-            Label missed_label = MakeSimpleLabel(missed_text, new Rect(this.sceneRect.Width * 0.6, 50, 0.4 * this.sceneRect.Width, 0.3 * this.sceneRect.Height), new SolidColorBrush(System.Windows.Media.Color.FromArgb(200, 255, 255, 255)));
+            Label missed_label = MakeSimpleLabel(missed_text, new Rect(this.sceneRect.Width * 0.4, 50, 0.4 * this.sceneRect.Width, 0.3 * this.sceneRect.Height), new SolidColorBrush(System.Windows.Media.Color.FromArgb(200, 255, 255, 255)));
             missed_label.FontSize = Math.Max(1, Math.Min(this.sceneRect.Width / 20, this.sceneRect.Height / 20));
             children.Add(missed_label);
 
@@ -615,10 +665,16 @@ namespace ShapeGame
             if (this.scores.ContainsKey(player))
             {
                 this.scores[player] = this.scores[player] + points;
+                
             }
             else
             {
                 this.scores.Add(player, points);
+            }
+
+            if (this.bonus < this.max_bonus && this.missed_blocks < this.max_missed)
+            {
+                this.bonus++;
             }
 
             FlyingText.NewFlyingText(this.sceneRect.Width / 300, center, "+" + points);
@@ -656,7 +712,14 @@ namespace ShapeGame
                 TouchedBy = 0,
                 Hotness = 0,
                 FlashCount = 0
+
             };
+
+             
+            Array values = Enum.GetValues(typeof(enemy_type));
+            Random random = new Random();
+            newThing.type = (enemy_type)values.GetValue(random.Next(values.Length));
+
 
             this.things.Add(newThing);
         }
@@ -670,7 +733,9 @@ namespace ShapeGame
             System.Windows.Media.Brush brush,
             System.Windows.Media.Brush brushStroke,
             double strokeThickness,
-            double opacity)
+            double opacity,
+            enemy_type type,
+            int current_image)
         {
             if (numSides <= 1)
             {
@@ -701,9 +766,24 @@ namespace ShapeGame
                 polyline.Stroke.Opacity = opacity;
             }
 
-            polyline.Fill = brush;
+            
+
+            //polyline.Fill = brush;
+
+            if (type == enemy_type.Orc)
+            {
+                polyline.Fill = new ImageBrush(orc);
+            }
+            else if (type == enemy_type.basic)
+            {
+                //Random r = new Random();
+                //int s = r.Next(0, 26);
+                
+                polyline.Fill = new ImageBrush(timlist[current_image%27]);
+            }
             polyline.FillRule = FillRule.Nonzero;
-            polyline.StrokeThickness = strokeThickness;
+            polyline.StrokeThickness = 0;//strokeThickness; // =0;
+            
             return polyline;
         }
 
@@ -734,7 +814,10 @@ namespace ShapeGame
             public double AvgTimeBetweenHits;
             public int TouchedBy;               // Last player to touch this thing
             public int Hotness;                 // Score level
+            public int current_index;
             public int FlashCount;
+            public enemy_type type;
+            
 
             // Hit testing between this thing and a single segment.  If hit, the center point on
             // the segment being hit is returned, along with the spot on the line from 0 to 1 if

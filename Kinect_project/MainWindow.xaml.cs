@@ -26,7 +26,13 @@ namespace ShapeGame
     using Microsoft.Samples.Kinect.WpfViewers;
     using ShapeGame.Utils;
     using ShapeGame.Speech;
+    using Microsoft.Xna.Framework.Content;
+    using Microsoft.Xna.Framework.Graphics;
+    using Microsoft.Xna.Framework.Input;
+    using Microsoft.Xna.Framework.Storage;
+    using Microsoft.Xna.Framework.GamerServices;
 
+    
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
@@ -39,7 +45,7 @@ namespace ShapeGame
                 typeof(KinectSensorManager),
                 typeof(MainWindow),
                 new PropertyMetadata(null));
-
+        
         #region Private State
         private const int TimerResolution = 2;  // ms
         private const int NumIntraFrames = 3;
@@ -142,6 +148,7 @@ namespace ShapeGame
             this.myFallingThings.SetSize(this.dropSize);
             this.myFallingThings.SetPolies(PolyType.All);
             this.myFallingThings.SetGameMode(GameMode.Off);
+            this.myFallingThings.list_loader();
 
             this.popSound.Stream = Properties.Resources.Pop_5;
             this.hitSound.Stream = Properties.Resources.Hit_2;
@@ -481,16 +488,6 @@ namespace ShapeGame
             // Draw new Wpf scene by adding all objects to canvas
             playfield.Children.Clear();
 
-
-            
-            // tekee joka kerta kun bonus laskuri on tullut täyteen. Voisi laittaa toimimaan puheohjauksella esim. Fire huudolla. 
-            /*if (myFallingThings.bonus == myFallingThings.max_bonus)
-            {
-                this.myFallingThings.DestroyThings(); // tuhoaa thingejä tietyltä x koordinaattialueelta. Jonkun palikan kautta animaation voisi piirtää siihen selvennykseksi
-                this.myFallingThings.bonus = 0;
-                
-            }*/
-
             this.myFallingThings.DrawFrame(this.playfield.Children);
             foreach (var player in this.players)
             {
@@ -498,6 +495,7 @@ namespace ShapeGame
             }
 
             FlyingText.Draw(playfield.Children);
+
 
             
 
@@ -523,13 +521,16 @@ namespace ShapeGame
                     this.myFallingThings.SetDropRate(0);
                     this.myFallingThings.SetGravity(0);
                     this.myFallingThings.SetXvelocity(0);
+                    this.myFallingThings.stopped = 1;
                     break;
                 case SpeechRecognizer.Verbs.Resume:
                     this.myFallingThings.SetDropRate(this.dropRate);
                     this.myFallingThings.SetGravity(this.dropGravity);
                     this.myFallingThings.SetXvelocity(this.xvelocity);
+                    this.myFallingThings.stopped = 0;
                     break;
                 case SpeechRecognizer.Verbs.Reset:
+                    this.myFallingThings.stopped = 0;
                     this.dropRate = DefaultDropRate;
                     this.dropSize = DefaultDropSize;
                     this.dropGravity = DefaultDropGravity;
@@ -537,78 +538,12 @@ namespace ShapeGame
                     this.myFallingThings.SetDropRate(this.dropRate);
                     this.myFallingThings.SetGravity(this.dropGravity);
                     this.myFallingThings.SetSize(this.dropSize);
-                    this.myFallingThings.SetXvelocity(0.5);
+                    this.myFallingThings.SetXvelocity(this.xvelocity);
                     this.myFallingThings.bonus = 0;
                     this.myFallingThings.missed_blocks = 0;
-                    // score pitäisi myös resettaa
                     this.myFallingThings.SetShapesColor(System.Windows.Media.Color.FromRgb(0, 0, 0), true);
                     this.myFallingThings.Reset();
-                    break;
-                case SpeechRecognizer.Verbs.DoShapes:
-                    this.myFallingThings.SetPolies(e.Shape);
-                    break;
-                case SpeechRecognizer.Verbs.RandomColors:
-                    this.myFallingThings.SetShapesColor(System.Windows.Media.Color.FromRgb(0, 0, 0), true);
-                    break;
-                case SpeechRecognizer.Verbs.Colorize:
-                    this.myFallingThings.SetShapesColor(e.RgbColor, false);
-                    break;
-                case SpeechRecognizer.Verbs.ShapesAndColors:
-                    this.myFallingThings.SetPolies(e.Shape);
-                    this.myFallingThings.SetShapesColor(e.RgbColor, false);
-                    break;
-                case SpeechRecognizer.Verbs.More:
-                    this.dropRate *= 1.5;
-                    this.myFallingThings.SetDropRate(this.dropRate);
-                    break;
-                case SpeechRecognizer.Verbs.Fewer:
-                    this.dropRate /= 1.5;
-                    this.myFallingThings.SetDropRate(this.dropRate);
-                    break;
-                case SpeechRecognizer.Verbs.Bigger:
-                    this.dropSize *= 1.5;
-                    if (this.dropSize > MaxShapeSize)
-                    {
-                        this.dropSize = MaxShapeSize;
-                    }
-
-                    this.myFallingThings.SetSize(this.dropSize);
-                    break;
-                case SpeechRecognizer.Verbs.Biggest:
-                    this.dropSize = MaxShapeSize;
-                    this.myFallingThings.SetSize(this.dropSize);
-                    break;
-                case SpeechRecognizer.Verbs.Smaller:
-                    this.dropSize /= 1.5;
-                    if (this.dropSize < MinShapeSize)
-                    {
-                        this.dropSize = MinShapeSize;
-                    }
-
-                    this.myFallingThings.SetSize(this.dropSize);
-                    break;
-                case SpeechRecognizer.Verbs.Smallest:
-                    this.dropSize = MinShapeSize;
-                    this.myFallingThings.SetSize(this.dropSize);
-                    break;
-                case SpeechRecognizer.Verbs.Faster:
-                    this.dropGravity *= 1.25;
-                    if (this.dropGravity > 4.0)
-                    {
-                        this.dropGravity = 4.0;
-                    }
-
-                    this.myFallingThings.SetGravity(this.dropGravity);
-                    break;
-                case SpeechRecognizer.Verbs.Slower:
-                    this.dropGravity /= 1.25;
-                    if (this.dropGravity < 0.25)
-                    {
-                        this.dropGravity = 0.25;
-                    }
-
-                    this.myFallingThings.SetGravity(this.dropGravity);
-                    break;
+                    break;                
             }
         }
 
@@ -620,9 +555,11 @@ namespace ShapeGame
 
         private void UpdateEchoCancellation(CheckBox aecCheckBox)
         {
+                /*
             this.mySpeechRecognizer.EchoCancellationMode = aecCheckBox.IsChecked != null && aecCheckBox.IsChecked.Value
                 ? EchoCancellationMode.CancellationAndSuppression
                 : EchoCancellationMode.None;
+                 * */
         }
 
         #endregion Kinect Speech processing
